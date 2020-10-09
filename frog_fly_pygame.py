@@ -20,7 +20,7 @@ TEXT_BG = (255, 255, 255)
 # Initialise Pygame
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Drawing Game")
+pygame.display.set_caption("Frog Game")
 clock = pygame.time.Clock()
 
 # Set text for instructions
