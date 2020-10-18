@@ -23,6 +23,23 @@ pygame.display.set_caption("Epic Py Game")
 clock = pygame.time.Clock()
 
 
+class Eye:
+    eye_color = GREEN
+    def __init__(self, rect):
+        self.rect = rect
+        self.center = [int(self.rect[0]) + int(self.rect[2])//2,
+                       int(self.rect[1]) + int(self.rect[3])//2]
+
+    def drawEyeball(self):
+
+        # Draw Eyeball
+        pygame.draw.ellipse(screen, Eye.eye_color, self.rect)
+
+        # Draw pupil
+        pupil_x, pupil_y = pupil_point(self.center, fly_pos, self.rect, k_radius, scale)
+        pygame.draw.circle(screen, BLACK, (pupil_x, pupil_y), 4)
+
+
 def line(point_1, point_2):
     ''' Find the equation of a line between two points '''
     X, Y = point_1[0], -1 * point_1[1]
@@ -54,7 +71,6 @@ def pupil_point(center_point, point_2, bounding_rect, k_radius, scale):
         - lies on the line between center_point and point_2
         - lies in the rect "boudning_rect"
         - lies within an error margin of scale
-
     '''
     m, c = line((center_point[0], center_point[1]), point_2)
 
@@ -100,18 +116,10 @@ while not done:
     fly_pos = loc
     pygame.draw.circle(screen, BLACK, fly_pos, 4)
 
-    # Eyeball
-    eye_rect = [WIDTH//3, HEIGHT//3, 50, 70]
-    pygame.draw.ellipse(screen, GREEN, eye_rect)
-
-    # Eye Center
-    eye_center = [int(eye_rect[0]) + int(eye_rect[2])//2,
-                  int(eye_rect[1]) + int(eye_rect[3])//2]
-
-    # Draw pupil
-    pupil_x, pupil_y = pupil_point(
-        eye_center, fly_pos, eye_rect, k_radius, scale)
-    pygame.draw.circle(screen, BLACK, (pupil_x, pupil_y), 4)
+    # Eyeballs
+    left_eye = Eye([WIDTH//4, HEIGHT//3, 50, 70]).drawEyeball()
+    right_eye = Eye([WIDTH//2, HEIGHT//3, 50, 70]).drawEyeball()
 
     pygame.display.update()
 pygame.quit()
+
