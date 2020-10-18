@@ -29,9 +29,11 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Epic Py Game")
 clock = pygame.time.Clock()
+loc = pygame.mouse.get_pos()
 
 
 class Fly:
+    catch_range = 5
 
     def __init__(self, color):
         self.color = color
@@ -43,23 +45,40 @@ class Fly:
         self.fly_change[1] *= random.choice([-1, 1])
 
     def drawFly(self):
+        self.rect = [self.fly_x, self.fly_y, 20, 10]
 
-        pygame.draw.ellipse(screen, self.color, [self.fly_x, self.fly_y, 20, 10])
+        pygame.draw.ellipse(screen, self.color, self.rect)
         pygame.draw.line(screen, self.color, (self.fly_x+2, self.fly_y+8), (self.fly_x, self.fly_y+12), 3)
         pygame.draw.line(screen, self.color, (self.fly_x+5, self.fly_y+8), (self.fly_x+5, self.fly_y+12), 3)
         pygame.draw.line(screen, self.color, (self.fly_x+18, self.fly_y+8), (self.fly_x+22, self.fly_y+12), 4)
         pygame.draw.line(screen, self.color, (self.fly_x+8, self.fly_y+8), (self.fly_x+12, self.fly_y+12), 4)
 
-        # Make fly bounce off walls
-        if self.fly_x >= WIDTH or self.fly_x <= 0:
-            self.fly_change[0] *= -1
+        # Show hitboxes
+        #pygame.draw.rect(screen, GREY, self.rect)
 
-        if self.fly_y >= HEIGHT or self.fly_y <= 0:
-            self.fly_change[1] *= -1
+        # if colliding with the mouse hitbox
+        r = pygame.Rect(self.rect)
+        if r.colliderect(h.rect):
 
-        # Move Fly
-        self.fly_x += self.fly_change[0]
-        self.fly_y += self.fly_change[1]
+            # if the distance between mouse and fly is less than x
+            rel_x, rel_y = pygame.mouse.get_rel()
+            if LinAlgebra.lenline(loc[0], loc[1], self.fly_x, self.fly_y) <= 20:
+
+                self.fly_x = loc[0] + random.randint(-3, 3) - 6
+                self.fly_y = loc[1] + random.randint(-3, 3)
+
+        # if not in mouse hitbox
+        else:
+            # Make fly bounce off walls
+            if self.fly_x >= WIDTH or self.fly_x <= 0:
+                self.fly_change[0] *= -1
+
+            if self.fly_y >= HEIGHT or self.fly_y <= 0:
+                self.fly_change[1] *= -1
+
+            # Move Fly
+            self.fly_x += self.fly_change[0]
+            self.fly_y += self.fly_change[1]
 
 
 class Eye:
@@ -95,10 +114,10 @@ class Eye:
                             -1 <= (m * x + c) / y:
 
                         # and it is the closest point to point_2
-                        if LinAlgebra.dispoints(x, y, point_2[0], point_2[1]) < short_dis:
+                        if LinAlgebra.lenline(x, y, point_2[0], point_2[1]) < short_dis:
                             short_x = x
                             short_y = y
-                            short_dis = LinAlgebra.dispoints(x, y, point_2[0], point_2[1])
+                            short_dis = LinAlgebra.lenline(x, y, point_2[0], point_2[1])
         return short_x, short_y
 
     def whereToLook(self):
@@ -110,10 +129,10 @@ class Eye:
 
         for fly in fly_list:
 
-            if LinAlgebra.dispoints(fly.fly_x, fly.fly_y, self.center[0], self.center[1]) <= short_dis:
+            if LinAlgebra.lenline(fly.fly_x, fly.fly_y, self.center[0], self.center[1]) <= short_dis:
                 closest_x = fly.fly_x
                 closest_y = fly.fly_y
-                short_dis = LinAlgebra.dispoints(fly.fly_x, fly.fly_y, self.center[0], self.center[1])
+                short_dis = LinAlgebra.lenline(fly.fly_x, fly.fly_y, self.center[0], self.center[1])
                 closest_fly_coords = [fly.fly_x, fly.fly_y]
 
         return closest_fly_coords
@@ -154,14 +173,15 @@ class Tongue:
         tip_tongue_y = loc[1]
         tongue_x = mouth_pos[0]
         tongue_y = mouth_pos[1]
-        pygame.draw.polygon(screen, PINK, [
-            (tip_tongue_x, tip_tongue_y),
-            (tongue_x+35, tongue_y + 85),
-            (tongue_x+120, tongue_y + 82),
-            (tip_tongue_x+25, tip_tongue_y)
-        ])
+        pygame.draw.polygon(screen, PINK,
+                            [
+                                (tip_tongue_x - 12, tip_tongue_y),
+                                (tongue_x+35, tongue_y + 85),
+                                (tongue_x+120, tongue_y + 82),
+                                (tip_tongue_x + 12, tip_tongue_y)
+                            ])
 
-        pygame.draw.line(screen, BLACK, (loc[0]+12, loc[1]), (tongue_x+77, tongue_y+83), 2)
+        pygame.draw.line(screen, BLACK, (loc[0], loc[1]), (tongue_x+77, tongue_y+83), 2)
 
 
 class LinAlgebra():
@@ -181,9 +201,23 @@ class LinAlgebra():
         y = (Y + y) // 2
         return x, y
 
-    def dispoints(X, Y, x, y):
+    def lenline(X, Y, x, y):
         ''' find the distance between 2 points using pythagoras'''
         return math.sqrt((X-x)**2 + (Y-y)**2)
+
+
+class MouseHitbox():
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.rect = [10, 10, 10, 10]
+        self.a = "a"
+
+    def drawHitbox(self):
+        self.rect = [loc[0]-12, loc[1], self.width, self.height]
+
+        # Show hitboxes
+        # pygame.draw.rect(screen, DARK_GREEN, self.rect)
 
 
 # Fly
@@ -192,6 +226,7 @@ for i in range(len(fly_colors)):
     fly_list.append(Fly(fly_colors[i]))
 
 
+h = MouseHitbox(25, 10)
 # initialise face parts
 # draw them offscreen
 face = Face()
@@ -244,6 +279,8 @@ while not done:
 
     for fly in fly_list:
         fly.drawFly()
+
+    h.drawHitbox()
 
     pygame.display.update()
 pygame.quit()
