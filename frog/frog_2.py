@@ -6,6 +6,7 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREY = (50, 50, 50)
 RED = (255, 0, 0)
+PINK = (255, 100, 100)
 GREEN = (0, 255, 0)
 DARK_GREEN = (52, 150, 60)
 BLUE = (0, 0, 255)
@@ -135,7 +136,9 @@ class Eye:
 
 
 class Face:
+    @classmethod
     def drawFace(self, pos):
+        self.pos = pos
         pygame.draw.ellipse(screen, BLACK, [pos[0]-5, pos[1]-5, 160, 110])
         pygame.draw.ellipse(screen, BLACK, [pos[0]+25//2-5, pos[1]+55, 135, 60])
         pygame.draw.ellipse(screen, GREEN, [pos[0], pos[1], 150, 100])
@@ -145,7 +148,20 @@ class Face:
 
 
 class Tongue:
-    pass
+
+    def drawTongue(self, loc, mouth_pos):
+        tip_tongue_x = loc[0]
+        tip_tongue_y = loc[1]
+        tongue_x = mouth_pos[0]
+        tongue_y = mouth_pos[1]
+        pygame.draw.polygon(screen, PINK, [
+            (tip_tongue_x, tip_tongue_y),
+            (tongue_x+35, tongue_y + 85),
+            (tongue_x+120, tongue_y + 82),
+            (tip_tongue_x+25, tip_tongue_y)
+        ])
+
+        pygame.draw.line(screen, BLACK, (loc[0]+12, loc[1]), (tongue_x+77, tongue_y+83), 2)
 
 
 class LinAlgebra():
@@ -188,7 +204,8 @@ eye_2 = Eye([50, 70])
 eye_2_loc = (-1000, -1000)
 
 tongue = Tongue()
-
+tongue_loc = (-1000, -1000)
+mouth_pos = (-1000, -1000)
 
 clicks = 0
 done = False
@@ -202,7 +219,6 @@ while not done:
             done = True
         if event.type == pygame.MOUSEBUTTONUP:
             clicks += 1
-            print(f"CLICK at {loc}")
 
     loc = pygame.mouse.get_pos()
 
@@ -215,12 +231,16 @@ while not done:
         eye_1_loc = loc
     if clicks == 2:
         eye_2_loc = loc
+    if clicks >= 3:
+        tongue_loc = loc
+        mouth_pos = Face.pos
 
     # draw face parts
     # (will be drawn offscreeen until click)
     face.drawFace(face_loc)
     eye_1.drawEye(eye_1_loc)
     eye_2.drawEye(eye_2_loc)
+    tongue.drawTongue(tongue_loc, mouth_pos)
 
     for fly in fly_list:
         fly.drawFly()
