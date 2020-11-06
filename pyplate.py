@@ -28,7 +28,7 @@ while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
-        
+
         pressed = False
         loc = pygame.mouse.get_pos()
         if pygame.mouse.get_pressed()[0]:
@@ -37,7 +37,7 @@ while not done:
 
         if pygame.key.get_pressed()[pygame.K_a]:
             print("A pressed")
-        
+
         if event.type == pygame.VIDEORESIZE:
             screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
             # BG_blit = pygame.transform.scale(BG, screen.get_size())
@@ -45,7 +45,7 @@ while not done:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 done = True
-        
+
         # Crosshair settings
         if pressed:
             line = RED
@@ -58,8 +58,8 @@ while not done:
         # screen.blit(BG_blit, [0, 0])
         screen.fill(WHITE)
 
-        pygame.draw.line(screen, line, (0,0), (loc), stroke)
-        pygame.draw.line(screen, line, (screen.get_rect()[2],0), (loc), stroke)
+        pygame.draw.line(screen, line, (0, 0), (loc), stroke)
+        pygame.draw.line(screen, line, (screen.get_rect()[2], 0), (loc), stroke)
         pygame.draw.line(screen, line, (0, screen.get_rect()[3]), (loc), stroke)
         pygame.draw.line(screen, line, (screen.get_rect()[2], screen.get_rect()[3]), (loc), stroke)
 
