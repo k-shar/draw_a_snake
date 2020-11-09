@@ -50,7 +50,7 @@ class Player:
         for proj in self.proj_list:
 
             # If projectile is not on screen
-            if not proj.Rect.colliderect(screen.get_rect()):
+            if proj.Rect.colliderect(pygame.Rect([300, 200, 300, 50])):
                 self.proj_list.remove(proj)
             else:
                 proj.draw()
@@ -86,7 +86,7 @@ while not done:
 
     loc = pygame.mouse.get_pos()
     player.draw(loc)
-    pygame.draw.rect(screen, RED, [300, 200, 50, 50])
+    pygame.draw.rect(screen, RED, [300, 200, 300, 50])
 
     clock.tick(FPS)
     pygame.display.update()
