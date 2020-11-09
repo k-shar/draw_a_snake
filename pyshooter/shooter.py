@@ -13,6 +13,8 @@ pygame.display.init()
 BG = pygame.image.load("bg.jpg")
 screen = pygame.display.set_mode(BG.get_rect().size)
 BG.convert()
+# to avoid deep-frying when resized
+BG_blit = BG
 
 class Proj:
     def __init__(self, obj, img):
@@ -53,8 +55,7 @@ class Player:
             else:
                 proj.draw()
 
-        if pygame.mouse.get_pressed()[0]:
-            self.shoot()
+
 
     def shoot(self):
         self.proj_list.append(Proj(self.img.get_rect(), self.proj_img))
@@ -69,8 +70,19 @@ while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
+            
+        if event.type == pygame.VIDEORESIZE:
+            screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+            BG_blit = pygame.transform.scale(BG, screen.get_size())
 
-    screen.blit(BG, [0, 0])
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                done = True
+    
+    if pygame.mouse.get_pressed()[0]:
+        player.shoot()
+    
+    screen.blit(BG_blit, [0, 0])
 
     loc = pygame.mouse.get_pos()
     player.draw(loc)
