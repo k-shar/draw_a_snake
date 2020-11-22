@@ -56,6 +56,7 @@ while not done:
 
         # For BG image
         # screen.blit(BG_blit, [0, 0])
+        # move this out of for loop
         screen.fill(WHITE)
 
         pygame.draw.line(screen, line, (0, 0), (loc), stroke)
