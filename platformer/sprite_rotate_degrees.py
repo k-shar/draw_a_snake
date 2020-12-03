@@ -1,6 +1,5 @@
 import pygame
 import math
-import random
 
 FPS = 30
 WHITE = (255, 255, 255)
@@ -131,70 +130,38 @@ class CarrotShooter(pygame.sprite.Sprite):
         self.player = player
 
     def update(self):
-        self.pos = [self.rect.centerx, self.rect.centery]
-        self.theta = calculateAngle(pygame.mouse.get_pos(), self.pos)
-        # Redefine Sprite with new rotated rect and suface
-        self.image = pygame.transform.rotate(self.orig_img, self.theta)
-        self.rect = self.image.get_rect(center=((self.player.x + self.player.rect.w // 2,
-                                                 self.player.y + self.player.rect.h // 3)))
+        # Distances between mouse and carrot
+        self.xdis = pygame.mouse.get_pos()[0] - self.rect.centerx
+        self.ydis = pygame.mouse.get_pos()[1] - self.rect.centery
 
+        # Calculate the angle between self and mouse pointer
+        if self.xdis != 0:
+            self.theta = math.atan(-1 * self.ydis / self.xdis)
+            self.theta = math.degrees(self.theta)
+            # scale down theta between 0 and 180
+            # as arctan returns negative values
+            self.theta = self.theta - (self.theta//180) * 180
 
-class CarrotProj(pygame.sprite.Sprite):
-    '''
-    Class for individulal carrots shot from player
-    '''
+        # Convert the angle to 0-360 opposed to 0-180
+        if pygame.mouse.get_pos()[1] > self.rect.centery:
+            self.theta += 180
 
-    def __init__(self, main_carrot):
-        super().__init__()
-        self.image = pygame.image.load("carrot.png")
-        self.image = pygame.transform.scale(self.image, (80, 30))
-        self.image.set_colorkey(WHITE)
-        # copy of img to prevent deep frying when rotating
-        self.orig_img = self.image
-        self.rect = self.image.get_rect()
+        # to handle edge cases
+        if self.theta == 0:
+            if self.rect.centerx > pygame.mouse.get_pos()[0]:
+                self.theta = -180
+            if self.rect.centerx < pygame.mouse.get_pos()[0]:
+                self.theta = 0
 
-        self.mask = pygame.mask.from_surface(self.image)
-
-        # set how fast the carrot accelerates
-        self.acc = 2
-
-        # -- rotation --
-        self.pos = [main_carrot.rect.centerx, main_carrot.rect.centery]
-        self.theta = calculateAngle(pygame.mouse.get_pos(), self.pos)
+            if self.rect.centery > pygame.mouse.get_pos()[1]:
+                self.theta = 90
+            if self.rect.centery < pygame.mouse.get_pos()[1]:
+                self.theta = -90
 
         # Redefine Sprite with new rotated rect and suface
         self.image = pygame.transform.rotate(self.orig_img, self.theta)
-        self.rect = self.image.get_rect(center=((main_carrot.rect.x + main_carrot.rect.w // 2,
-                                                 main_carrot.rect.y + main_carrot.rect.h // 3)))
+        self.rect = self.image.get_rect(center=((self.player.x + self.player.rect.w // 2, self.player.y + self.player.rect.h // 3)))
 
-        # for float accuracy
-        self.x = main_carrot.rect.centerx
-        self.y = main_carrot.rect.centery
-
-        # set dx, dy as distance from center to mouse pointer
-        self.dx = (pygame.mouse.get_pos()[0] - self.x) + random.randint(-15, 15)
-        self.dy = (pygame.mouse.get_pos()[1] - self.y) + random.randint(-15, 15)
-
-        # scale down dx dy so all angles will fire at the same speed
-        self.hypot = math.hypot(self.dx, self.dy)
-        self.dx /= self.hypot
-        self.dy /= self.hypot
-
-        self.vx, self.vy = 0, 0
-
-    def update(self):
-        self.mask = pygame.mask.from_surface(self.image)
-
-        # compound dx, dy to accelerate the carrot
-        self.vx += self.dx
-        self.vy += self.dy
-
-        self.x += self.vx * self.acc
-        self.y += self.vy * self.acc
-
-        # set calculated values to the sprites rect
-        self.rect.centerx = self.x
-        self.rect.centery = self.y
 
 
 class Platform(pygame.sprite.Sprite):
@@ -205,7 +172,7 @@ class Platform(pygame.sprite.Sprite):
     def __init__(self, width, height):
         super().__init__()
 
-        self.image = pygame.Surface([width, height], pygame.SRCALPHA)
+        self.image = pygame.Surface([width, height])
         self.image.fill(RED)
         self.rect = self.image.get_rect()
 
@@ -239,9 +206,7 @@ class Level_01(Level):
         level = [
             [0, 0, 10, 300],
             [0, 290, 300, 10],
-            [150, 200, 100, 10],
-            [0, 0, 300, 10],
-            [290, 0, 10, 300]
+            [150, 200, 100, 10]
         ]
 
         for platform in level:
@@ -249,43 +214,6 @@ class Level_01(Level):
             block.rect.x = platform[0]
             block.rect.y = platform[1]
             self.platform_list.add(block)
-
-
-def calculateAngle(p1, p2):
-    '''
-    return the angle between two points
-    in degrees from 0-360
-    0 being the positive x-axis
-    '''
-    # Distances between p1 and p2
-    xdis = p1[0] - p2[0]
-    ydis = p1[1] - p2[1]
-
-    # Calculate the angle between p1 and mouse p2
-    # Avoid division by 0
-    if xdis != 0:
-        theta = math.atan(-1 * ydis / xdis)
-        theta = math.degrees(theta)
-        # scale down theta between 0 and 180
-        # as arctan returns negative values
-        theta = theta - (theta//180) * 180
-
-        # Convert the angle from 0-180 to 0-360
-        if p1[1] > p2[1]:
-            theta += 180
-    else:
-        theta = 0
-
-    # # Handle edge cases
-    # if theta == 0:
-    #     # if mouse is inline and to the right
-    #     if p2[0] < p1[0]:
-    #         theta = 0
-    #     # if mouse is inline and to the left
-    #     if p2[0] > p1[0]:
-    #         theta = 180
-
-    return theta
 
 
 # Define player components
@@ -296,9 +224,6 @@ carrot_shooter = CarrotShooter(player)
 player_sprite_group = pygame.sprite.Group()
 player_sprite_group.add(player)
 player_sprite_group.add(carrot_shooter)
-
-# Define list of player-projectiles
-carrot_proj_list = pygame.sprite.Group()
 
 # Create list of all levels
 level_list = []
@@ -319,10 +244,8 @@ while not done:
             done = True
         if event.type == pygame.VIDEORESIZE:
             screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            carrot_proj_list.add(CarrotProj(carrot_shooter))
 
-    # Player movement if keydowns
+    # Player movement if keydown
     if pygame.key.get_pressed()[pygame.K_a]:
         player.move_left()
     if pygame.key.get_pressed()[pygame.K_d]:
@@ -334,15 +257,9 @@ while not done:
 
     current_level.update()
     player_sprite_group.update()
-    carrot_proj_list.update()
-
-    for platform in current_level.platform_list:
-        col = pygame.sprite.spritecollide(platform, carrot_proj_list, True, pygame.sprite.collide_mask)
-        print(col)
 
     current_level.draw(screen)
     player_sprite_group.draw(screen)
-    carrot_proj_list.draw(screen)
 
     pygame.display.update()
     clock.tick(FPS)

@@ -57,7 +57,7 @@ class Player:
         self.dy += self.gravity
         self.vx *= self.drag
 
-        # add change in velocity t0 total velocitiy
+        # add change in velocity to total velocitiy
         self.vx += self.dx
         self.vy += self.dy
 
@@ -111,7 +111,7 @@ class Player:
 
     def recoil(self, dx, dy):
         self.dx = dx * -10
-        self.dy = dy * -10
+        self.dy = dy * -10 
         self.rectifyCollisions()
         pygame.draw.rect(self.screen, self.color, self.Rect)
 
