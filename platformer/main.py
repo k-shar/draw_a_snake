@@ -10,7 +10,7 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
 pygame.display.init()
-screen = pygame.display.set_mode((300, 300))
+screen = pygame.display.set_mode((600, 600))
 pygame.display.set_caption("Platformer 2")
 
 
@@ -39,11 +39,12 @@ class Player(pygame.sprite.Sprite):
 
         self.landed = False
 
-        self.speed = 4
+        self.speed = 2
         self.jump_strength = -20
         self.bounce = -0.4
         self.drag = 0.8
         self.gravity = 1.5
+        self.recoil = 10
 
         self.dx, self.dy = 0, 0
         self.vx, self.vy = 0, 0
@@ -113,6 +114,10 @@ class Player(pygame.sprite.Sprite):
             self.vy = self.jump_strength
             self.landed = False
 
+    def fired_carrot(self, carrot):
+        self.vx -= carrot.dx * self.recoil
+        self.vy -= carrot.dy * self.recoil
+
 
 class CarrotShooter(pygame.sprite.Sprite):
     '''
@@ -147,7 +152,8 @@ class CarrotProj(pygame.sprite.Sprite):
     def __init__(self, main_carrot):
         super().__init__()
         self.image = pygame.image.load("carrot.png")
-        self.image = pygame.transform.scale(self.image, (80, 30))
+    #    self.image = pygame.transform.scale(self.image, (80, 30))
+        self.image = pygame.transform.scale(self.image, (40, 15))
         self.image.set_colorkey(WHITE)
         # copy of img to prevent deep frying when rotating
         self.orig_img = self.image
@@ -155,8 +161,11 @@ class CarrotProj(pygame.sprite.Sprite):
 
         self.mask = pygame.mask.from_surface(self.image)
 
+        # -- CARROT STATS --
         # set how fast the carrot accelerates
-        self.acc = 2
+        self.acc = 5
+        self.life = 20
+        self.deflection = 15
 
         # -- rotation --
         self.pos = [main_carrot.rect.centerx, main_carrot.rect.centery]
@@ -172,8 +181,8 @@ class CarrotProj(pygame.sprite.Sprite):
         self.y = main_carrot.rect.centery
 
         # set dx, dy as distance from center to mouse pointer
-        self.dx = (pygame.mouse.get_pos()[0] - self.x) + random.randint(-15, 15)
-        self.dy = (pygame.mouse.get_pos()[1] - self.y) + random.randint(-15, 15)
+        self.dx = (pygame.mouse.get_pos()[0] - self.x) + random.randint(-1 * self.deflection, self.deflection)
+        self.dy = (pygame.mouse.get_pos()[1] - self.y) + random.randint(-1 * self.deflection, self.deflection)
 
         # scale down dx dy so all angles will fire at the same speed
         self.hypot = math.hypot(self.dx, self.dy)
@@ -196,6 +205,10 @@ class CarrotProj(pygame.sprite.Sprite):
         self.rect.centerx = self.x
         self.rect.centery = self.y
 
+        self.life -= 1
+        if self.life <= 0:
+            self.kill()
+
 
 class Platform(pygame.sprite.Sprite):
     '''
@@ -216,7 +229,10 @@ class Level:
     '''
 
     def __init__(self, player):
+        # Create list of all platforms the player interacts with
         self.platform_list = pygame.sprite.Group()
+        # Create list of objects that destroy carrots
+        self.destroy_carrot = pygame.sprite.Group()
         self.player = player
 
     def update(self):
@@ -224,7 +240,7 @@ class Level:
 
     def draw(self, screen):
         self.platform_list.draw(screen)
-
+ 
 
 class Level_01(Level):
     '''
@@ -237,11 +253,11 @@ class Level_01(Level):
 
         # x, y, width, height
         level = [
-            [0, 0, 10, 300],
-            [0, 290, 300, 10],
-            [150, 200, 100, 10],
-            [0, 0, 300, 10],
-            [290, 0, 10, 300]
+            #[0, 0, 10, 300, False], 
+            [0, 290, 3000, 10, False],
+            [150, 200, 100, 10, True],
+            #[0, 0, 300, 10, False],
+            #[290, 0, 10, 300, False]
         ]
 
         for platform in level:
@@ -249,6 +265,10 @@ class Level_01(Level):
             block.rect.x = platform[0]
             block.rect.y = platform[1]
             self.platform_list.add(block)
+
+            # Add to list of spries that destroy carrot on impact
+            if platform[4]:
+                self.destroy_carrot.add(block)
 
 
 def calculateAngle(p1, p2):
@@ -273,17 +293,19 @@ def calculateAngle(p1, p2):
         # Convert the angle from 0-180 to 0-360
         if p1[1] > p2[1]:
             theta += 180
-    else:
-        theta = 0
 
-    # # Handle edge cases
-    # if theta == 0:
-    #     # if mouse is inline and to the right
-    #     if p2[0] < p1[0]:
-    #         theta = 0
-    #     # if mouse is inline and to the left
-    #     if p2[0] > p1[0]:
-    #         theta = 180
+        # Edge case for when points are inline on y-axis
+        if p1[1] == p2[1]:
+            theta = 180
+
+    # When xdis is 0
+    else:
+        # If p1 is above p2
+        if p1[1] < p2[1]:
+            theta = 90
+        # If p1 is below p2
+        if p1[1] > p2[1]:
+            theta = 270
 
     return theta
 
@@ -309,6 +331,7 @@ current_level_no = 0
 current_level = level_list[current_level_no]
 player.level = current_level
 
+
 clock = pygame.time.Clock()
 done = False
 while not done:
@@ -320,7 +343,9 @@ while not done:
         if event.type == pygame.VIDEORESIZE:
             screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
         if event.type == pygame.MOUSEBUTTONDOWN:
-            carrot_proj_list.add(CarrotProj(carrot_shooter))
+            carrot = CarrotProj(carrot_shooter)
+            player.fired_carrot(carrot)
+            carrot_proj_list.add(carrot)
 
     # Player movement if keydowns
     if pygame.key.get_pressed()[pygame.K_a]:
@@ -332,17 +357,17 @@ while not done:
     if pygame.key.get_pressed()[pygame.K_w]:
         player.jump()
 
-    current_level.update()
-    player_sprite_group.update()
     carrot_proj_list.update()
+    player_sprite_group.update()
+    current_level.update()
 
-    for platform in current_level.platform_list:
+    # Remove collided carrots
+    for platform in current_level.destroy_carrot:
         col = pygame.sprite.spritecollide(platform, carrot_proj_list, True, pygame.sprite.collide_mask)
-        print(col)
 
-    current_level.draw(screen)
-    player_sprite_group.draw(screen)
     carrot_proj_list.draw(screen)
+    player_sprite_group.draw(screen)
+    current_level.draw(screen)
 
     pygame.display.update()
     clock.tick(FPS)
