@@ -10,9 +10,6 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
 pygame.display.init()
-screen = pygame.display.set_mode((600, 600))
-pygame.display.set_caption("Platformer 2")
-
 
 class Player(pygame.sprite.Sprite):
     ''' 
@@ -20,11 +17,11 @@ class Player(pygame.sprite.Sprite):
     and their carrot shooting carrot launcher 
     '''
 
-    def __init__(self, color, spawn_loc):
+    def __init__(self, color, spawn_loc, size):
         ''' Constructor function '''
         super().__init__()
 
-        self.image = pygame.Surface([20, 40])
+        self.image = pygame.Surface(size)
         self.image.fill(color)
         self.rect = self.image.get_rect()
         self.level = None
@@ -94,6 +91,7 @@ class Player(pygame.sprite.Sprite):
             self.y = self.rect.y
             self.vy *= self.bounce
             self.landed = True
+
         self.dx = 0
         self.dy = 0
 
@@ -169,6 +167,8 @@ class CarrotProj(pygame.sprite.Sprite):
 
         # -- rotation --
         self.pos = [main_carrot.rect.centerx, main_carrot.rect.centery]
+
+
         self.theta = calculateAngle(pygame.mouse.get_pos(), self.pos)
 
         # Redefine Sprite with new rotated rect and suface
@@ -240,7 +240,12 @@ class Level:
 
     def draw(self, screen):
         self.platform_list.draw(screen)
- 
+
+    def shift_world(self, shift_x):
+
+        for platform in self.platform_list:
+            platform.rect.x += shift_x
+
 
 class Level_01(Level):
     '''
@@ -251,11 +256,13 @@ class Level_01(Level):
     def __init__(self, player):
         Level.__init__(self, player)
 
-        # x, y, width, height
+        # x, y, width, height, destroy carrot on impact
+        # destroy carrot on impact if not a wall)
         level = [
-            #[0, 0, 10, 300, False], 
-            [0, 290, 3000, 10, False],
-            [150, 200, 100, 10, True],
+            [0, 0, 10, 300],
+            [0, 290, 3000, 10],
+            [150, 200, 100, 10],
+            [450, 170, 76, 10],
             #[0, 0, 300, 10, False],
             #[290, 0, 10, 300, False]
         ]
@@ -266,9 +273,6 @@ class Level_01(Level):
             block.rect.y = platform[1]
             self.platform_list.add(block)
 
-            # Add to list of spries that destroy carrot on impact
-            if platform[4]:
-                self.destroy_carrot.add(block)
 
 
 def calculateAngle(p1, p2):
@@ -309,9 +313,13 @@ def calculateAngle(p1, p2):
 
     return theta
 
+screen = pygame.display.set_mode((600, 300))
+pygame.display.set_caption("Platformer 2")
+
+display = pygame.Surface((300, 300))
 
 # Define player components
-player = Player(BLUE, [100, 150])
+player = Player(BLUE, [100, 150], [30, 50])
 carrot_shooter = CarrotShooter(player)
 
 # Create sprite group for player
@@ -335,13 +343,15 @@ player.level = current_level
 clock = pygame.time.Clock()
 done = False
 while not done:
-    screen.fill(BLACK)
+    display.fill(BLACK)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
         if event.type == pygame.VIDEORESIZE:
             screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+
+        # Fire Carrot
         if event.type == pygame.MOUSEBUTTONDOWN:
             carrot = CarrotProj(carrot_shooter)
             player.fired_carrot(carrot)
@@ -357,17 +367,33 @@ while not done:
     if pygame.key.get_pressed()[pygame.K_w]:
         player.jump()
 
+
     carrot_proj_list.update()
     player_sprite_group.update()
     current_level.update()
 
     # Remove collided carrots
-    for platform in current_level.destroy_carrot:
+    for platform in current_level.platform_list:
         col = pygame.sprite.spritecollide(platform, carrot_proj_list, True, pygame.sprite.collide_mask)
 
-    carrot_proj_list.draw(screen)
-    player_sprite_group.draw(screen)
-    current_level.draw(screen)
+    # -- Scrolling the map --
+    if player.x > display.get_size()[0] * 3//4:
+        player.x = display.get_size()[0] * 3//4
+        current_level.shift_world(-1 * player.vx)
+
+    if player.x < display.get_size()[0] * 1//4:
+        player.x = display.get_size()[0] * 1//4
+        current_level.shift_world(-1 * player.vx)
+
+
+    carrot_proj_list.draw(display)
+    player_sprite_group.draw(display)
+    current_level.draw(display)
+
+    # Scale display and fit to screen
+    display_size = [screen.get_size()[0], screen.get_size()[1]]
+    pygame.transform.scale(display, display_size, screen)
+
 
     pygame.display.update()
     clock.tick(FPS)

@@ -5,9 +5,9 @@ http://programarcadegames.com/
 http://simpson.edu/computer-science/
  
 From:
-http://programarcadegames.com/python_examples/f.php?file=platform_moving.py
+http://programarcadegames.com/python_examples/f.php?file=platform_scroller.py
  
-Explanation video: http://youtu.be/YKdOD5VkY48
+Explanation video: http://youtu.be/QplXBw_NK5Y
  
 Part of a series:
 http://programarcadegames.com/python_examples/f.php?file=move_with_walls_example.py
@@ -16,7 +16,9 @@ http://programarcadegames.com/python_examples/f.php?file=platform_jumper.py
 http://programarcadegames.com/python_examples/f.php?file=platform_scroller.py
 http://programarcadegames.com/python_examples/f.php?file=platform_moving.py
 http://programarcadegames.com/python_examples/sprite_sheets/
+ 
 """
+ 
 import pygame
  
 # Global constants
@@ -97,9 +99,6 @@ class Player(pygame.sprite.Sprite):
             # Stop our vertical movement
             self.change_y = 0
  
-            if isinstance(block, MovingPlatform):
-                self.rect.x += block.change_x
- 
     def calc_grav(self):
         """ Calculate effect of gravity. """
         if self.change_y == 0:
@@ -116,8 +115,8 @@ class Player(pygame.sprite.Sprite):
         """ Called when user hits 'jump' button. """
  
         # move down a bit and see if there is a platform below us.
-        # Move down 2 pixels because it doesn't work well if we only move down
-        # 1 when working with a platform moving down.
+        # Move down 2 pixels because it doesn't work well if we only move down 1
+        # when working with a platform moving down.
         self.rect.y += 2
         platform_hit_list = pygame.sprite.spritecollide(self, self.level.platform_list, False)
         self.rect.y -= 2
@@ -155,75 +154,10 @@ class Platform(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
  
  
-class MovingPlatform(Platform):
-    """ This is a fancier platform that can actually move. """
-    change_x = 0
-    change_y = 0
- 
-    boundary_top = 0
-    boundary_bottom = 0
-    boundary_left = 0
-    boundary_right = 0
- 
-    player = None
- 
-    level = None
- 
-    def update(self):
-        """ Move the platform.
-            If the player is in the way, it will shove the player
-            out of the way. This does NOT handle what happens if a
-            platform shoves a player into another object. Make sure
-            moving platforms have clearance to push the player around
-            or add code to handle what happens if they don't. """
- 
-        # Move left/right
-        self.rect.x += self.change_x
- 
-        # See if we hit the player
-        hit = pygame.sprite.collide_rect(self, self.player)
-        if hit:
-            # We did hit the player. Shove the player around and
-            # assume he/she won't hit anything else.
- 
-            # If we are moving right, set our right side
-            # to the left side of the item we hit
-            if self.change_x < 0:
-                self.player.rect.right = self.rect.left
-            else:
-                # Otherwise if we are moving left, do the opposite.
-                self.player.rect.left = self.rect.right
- 
-        # Move up/down
-        self.rect.y += self.change_y
- 
-        # Check and see if we the player
-        hit = pygame.sprite.collide_rect(self, self.player)
-        if hit:
-            # We did hit the player. Shove the player around and
-            # assume he/she won't hit anything else.
- 
-            # Reset our position based on the top/bottom of the object.
-            if self.change_y < 0:
-                self.player.rect.bottom = self.rect.top
-            else:
-                self.player.rect.top = self.rect.bottom
- 
-        # Check the boundaries and see if we need to reverse
-        # direction.
-        if self.rect.bottom > self.boundary_bottom or self.rect.top < self.boundary_top:
-            self.change_y *= -1
- 
-        cur_pos = self.rect.x - self.level.world_shift
-        if cur_pos < self.boundary_left or cur_pos > self.boundary_right:
-            self.change_x *= -1
- 
- 
-class Level(object):
+class Level():
     """ This is a generic super-class used to define a level.
         Create a child class for each level with level-specific
         info. """
- 
  
     def __init__(self, player):
         """ Constructor. Pass in a handle to player. Needed for when moving
@@ -231,13 +165,9 @@ class Level(object):
         self.platform_list = pygame.sprite.Group()
         self.enemy_list = pygame.sprite.Group()
         self.player = player
-         
-        # Background image
-        self.background = None
-     
+ 
         # How far this world has been scrolled left/right
         self.world_shift = 0
-        self.level_limit = -1000
  
     # Update everythign on this level
     def update(self):
@@ -256,8 +186,8 @@ class Level(object):
         self.enemy_list.draw(screen)
  
     def shift_world(self, shift_x):
-        """ When the user moves left/right and we need to scroll everything:
-        """
+        """ When the user moves left/right and we need to scroll
+        everything: """
  
         # Keep track of the shift amount
         self.world_shift += shift_x
@@ -280,7 +210,7 @@ class Level_01(Level):
         # Call the parent constructor
         Level.__init__(self, player)
  
-        self.level_limit = -1500
+        self.level_limit = -1000
  
         # Array with width, height, x, and y of platform
         level = [[210, 70, 500, 500],
@@ -297,17 +227,6 @@ class Level_01(Level):
             block.player = self.player
             self.platform_list.add(block)
  
-        # Add a custom moving platform
-        block = MovingPlatform(70, 40)
-        block.rect.x = 1350
-        block.rect.y = 280
-        block.boundary_left = 1350
-        block.boundary_right = 1600
-        block.change_x = 1
-        block.player = self.player
-        block.level = self
-        self.platform_list.add(block)
- 
  
 # Create platforms for the level
 class Level_02(Level):
@@ -322,10 +241,10 @@ class Level_02(Level):
         self.level_limit = -1000
  
         # Array with type of platform, and x, y location of the platform.
-        level = [[210, 70, 500, 550],
-                 [210, 70, 800, 400],
-                 [210, 70, 1000, 500],
-                 [210, 70, 1120, 280],
+        level = [[210, 30, 450, 570],
+                 [210, 30, 850, 420],
+                 [210, 30, 1000, 520],
+                 [210, 30, 1120, 280],
                  ]
  
         # Go through the array above and add platforms
@@ -336,17 +255,6 @@ class Level_02(Level):
             block.player = self.player
             self.platform_list.add(block)
  
-        # Add a custom moving platform
-        block = MovingPlatform(70, 70)
-        block.rect.x = 1500
-        block.rect.y = 300
-        block.boundary_top = 100
-        block.boundary_bottom = 550
-        block.change_y = -1
-        block.player = self.player
-        block.level = self
-        self.platform_list.add(block)
- 
  
 def main():
     """ Main Program """
@@ -355,8 +263,8 @@ def main():
     # Set the height and width of the screen
     size = [SCREEN_WIDTH, SCREEN_HEIGHT]
     screen = pygame.display.set_mode(size)
-    
-    pygame.display.set_caption("Platformer with moving platforms")
+ 
+    pygame.display.set_caption("Side-scrolling Platformer")
  
     # Create the player
     player = Player()
@@ -424,15 +332,11 @@ def main():
         # If the player gets to the end of the level, go to the next level
         current_position = player.rect.x + current_level.world_shift
         if current_position < current_level.level_limit:
+            player.rect.x = 120
             if current_level_no < len(level_list)-1:
-                player.rect.x = 120
                 current_level_no += 1
                 current_level = level_list[current_level_no]
                 player.level = current_level
-            else:
-                # Out of levels. This just exits the program.
-                # You'll want to do something better.
-                done = True
  
         # ALL CODE TO DRAW SHOULD GO BELOW THIS COMMENT
         current_level.draw(screen)
