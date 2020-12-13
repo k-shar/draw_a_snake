@@ -2,14 +2,15 @@ import pygame
 import constants as con
 import window_sizing
 import buttons as b
-
+import text
 
 def menu(screen, window):
     done = False
 
-    buttons = pygame.sprite.Group()   
-    buttons.add(b.Button("Enter", con.WHITE, [3/4, 1/3], [1/2, 1/3]))
-    buttons.add(b.Button("Quit", con.BLACK, [3/4, 1/3], [1/2, 2/3]))
+    buttons = pygame.sprite.Group()
+    buttons.add(b.Button("~Title~", con.BLUE, [3/4, 0.2], [1/2, 2/8]))
+    buttons.add(b.Button("Enter",  con.WHITE, [3/4, 0.2], [1/2, 4/8]))
+    buttons.add(b.Button("Quit",   con.BLACK, [3/4, 0.2], [1/2, 6/8]))
 
     while not done:
 
@@ -26,7 +27,7 @@ def menu(screen, window):
                 screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
         # scale up window to fill screen
-        window = window_sizing.fit_aspect_ratio(window, con.ASPECT_RATIO, screen)
+        window = window_sizing.fit_aspect_ratio(window, con.ASPECT_RATIO, screen, 2)
         window_pos = window_sizing.center_surfaces(window, screen)
 
         # draw buttons
@@ -62,6 +63,7 @@ def main(screen, display):
 
 if __name__ == "__main__":
     pygame.display.init()
+    pygame.font.init()
     screen = pygame.display.set_mode(con.SCREEN_SIZE, pygame.RESIZABLE)
     display = pygame.Surface([screen.get_width(), screen.get_height()])
 
