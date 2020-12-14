@@ -42,3 +42,11 @@ def center_surfaces(inner, outer):
     center_y = (outer_size[1] - inner_size[1]) / 2
 
     return [center_x, center_y]
+
+
+def center_sizes(inner, outer):
+
+    center_x = (outer[0] - inner[0]) / 2
+    center_y = (outer[1] - inner[1]) / 2
+
+    return [center_x, center_y]
