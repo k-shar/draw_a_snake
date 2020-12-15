@@ -13,7 +13,7 @@ class Button(pygame.sprite.Sprite):
         self.size = size
         self.pos = pos
         self.name = name
-
+        self.hover_color = (200, 100, 200)
         self.font = pygame.freetype.SysFont("bell", 12)
 
     def update(self, window, screen):
@@ -31,8 +31,17 @@ class Button(pygame.sprite.Sprite):
 
         self.image.fill(self.color)
 
+        self.display_text()
 
+    def display_text(self):
         # -- display text --
         text_box = self.font.get_rect(self.name, size=self.rect.height)
         text_box.center = self.image.get_rect().center
         self.font.render_to(self.image, text_box, self.name, self.font_col, size=self.rect.height)
+
+    def click(self):
+        return self.name
+
+    def hover(self):
+        self.image.fill(self.hover_color)        
+        self.display_text()
