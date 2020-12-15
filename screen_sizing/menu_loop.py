@@ -37,9 +37,9 @@ def main(screen, window):
                     mouse_relative_to_window = (pygame.mouse.get_pos()[0] - window_pos[0], pygame.mouse.get_pos()[1] - window_pos[1])
                     if button.rect.collidepoint(mouse_relative_to_window):
                         button_action = button.click()
-
-                        if button_action == "Quit":
-                            done = True
+                        
+                        if button_action != "~Title~":
+                            return button_action
 
         # -- button on hover --
         # Check all buttons

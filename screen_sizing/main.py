@@ -19,7 +19,11 @@ def init():
 if __name__ == "__main__":
 
     screen, window = init()
-    menu_loop.main(screen, window)
-    game_loop.main(screen, window)
+    menu_return = menu_loop.main(screen, window)
 
-    pygame.quit()
+    if menu_return == "Quit":
+        pygame.quit()
+        
+    if menu_return == "Enter":
+        game_loop.main(screen, window)
+
