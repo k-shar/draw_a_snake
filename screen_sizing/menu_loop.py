@@ -4,16 +4,20 @@ import constants as con
 import window_sizing
 import buttons as b
 
-def main(screen, window):
-    done = False
-    clock = pygame.time.Clock()
 
+def main(screen, window):
 
     buttons = pygame.sprite.Group()
     buttons.add(b.Button("~Title~", con.BLUE, [3/4, 0.2], [1/2, 2/8], con.WHITE))
     buttons.add(b.Button("Enter",  con.RED, [3/4, 0.2], [1/2, 4/8], con.WHITE))
     buttons.add(b.Button("Quit",   con.BLACK, [3/4, 0.2], [1/2, 6/8], con.WHITE))
+ 
+    # scale window on load
+    window = window_sizing.fit_aspect_ratio(window, con.ASPECT_RATIO, screen, 2)
+    window_pos = window_sizing.center_surfaces(window, screen)
 
+    clock = pygame.time.Clock()
+    done = False
     while not done:
 
         # -- update things --
@@ -37,7 +41,8 @@ def main(screen, window):
                     mouse_relative_to_window = (pygame.mouse.get_pos()[0] - window_pos[0], pygame.mouse.get_pos()[1] - window_pos[1])
                     if button.rect.collidepoint(mouse_relative_to_window):
                         button_action = button.click()
-                        
+
+                        # Special case for title button
                         if button_action != "~Title~":
                             return button_action
 
@@ -49,19 +54,19 @@ def main(screen, window):
             if button.rect.collidepoint(mouse_relative_to_window):
                 button.hover()
 
-
         # draw buttons
         buttons.draw(window)
-            
+
         screen.blit(window, window_pos)
 
         pygame.display.update()
         clock.tick(con.FPS)
 
+
 if __name__ == '__main__':
 
     screen, window = m.init()
     pygame.display.set_caption("Menu test")
-
     main(screen, window)
+    
     pygame.quit()
